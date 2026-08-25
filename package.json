@@ -1,0 +1,19 @@
+{
+  "name": "bilal-faisal-portfolio",
+  "version": "1.0.0",
+  "description": "Full Stack Multi-Page Portfolio with Express + SQLite Backend & Admin Studio",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "build": "cd server && npm install",
+    "postinstall": "cd server && npm install"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

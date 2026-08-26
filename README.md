@@ -7,7 +7,7 @@
 [![CSS3](https://img.shields.io/badge/CSS3-Aurora_Tech-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://developer.mozilla.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-A modern, high-performance **Multi-Page Full-Stack Developer Portfolio** featuring an **Aurora Tech & Bento-Grid design system**, an **interactive floating IDE sandbox**, a dedicated **Admin Studio Dashboard**, and a persistent **Node.js + Express + SQLite Database backend**.
+A modern, high-performance **Multi-Page Full-Stack Developer Portfolio** featuring an **Aurora Tech & Bento-Grid design system**, an **interactive floating IDE sandbox**, **Supabase Cloud PostgreSQL Database integration**, and a persistent **Node.js + Express + SQLite Database backend**.
 
 ---
 
@@ -40,18 +40,10 @@ Individual standalone pages with active navigation link indicators:
 - 📂 **Projects** (`projects.html`) — Complete portfolio catalogue with category filter tabs (**All / Client Work / Personal**), browser mockup cards, and case study modal dialogs.
 - 📬 **Contact** (`contact.html`) — Direct reachout info, 30-min Calendly integration, and direct message form.
 
-### 👑 5. Dedicated Portfolio Admin Studio (`/admin/`)
-- **Dashboard Metrics**: Live metric counters for Total Projects, Active Services, Client Reviews, and Contact Inquiries.
-- **Projects Manager (Full CRUD)**: Create, edit, and delete client & personal projects with live URL and GitHub links.
-- **Services & Testimonials Manager (Full CRUD)**: Full management of service deliverables and client reviews with star ratings.
-- **Contact Inbox**: Incoming messages submitted via `contact.html` appear immediately with unread badge indicators and direct email reply triggers.
-- **Profile & Bio Settings**: Update headline, subheadline, avatar text, phone, email, Calendly URL, and social links.
-
-### 🗄️ 6. Node.js + Express + SQLite Database Backend
-- **Engine**: SQLite (via `better-sqlite3` in WAL mode).
-- **Persistent Storage**: All tables (`personal_info`, `projects`, `services`, `process_steps`, `testimonials`, `messages`) stored in a local `.db` file.
-- **Auto-Initialization**: Automatically creates schemas and seeds initial data on first run with zero configuration.
-- **Unified Express Server**: Serves both REST API endpoints at `/api/*` and static multi-page frontend at `/`.
+### ☁️ 5. Supabase Cloud PostgreSQL Database
+- **Persistent Storage**: All portfolio data stored permanently in Supabase Cloud PostgreSQL.
+- **Auto-Initialization**: Automatic fallback and real-time cloud data querying.
+- **Instant Global Sync**: Fast worldwide edge access without server cold-starts.
 
 ---
 
@@ -65,30 +57,20 @@ portfolio/
 ├── projects.html                # Dedicated Projects Showcase Page
 ├── contact.html                 # Dedicated Contact & Consultation Page
 ├── css/
-│   └── style.css                # Aurora Tech design system tokens & animations
+│   └── style.css                # Aurora Tech design system tokens & mobile responsiveness
 ├── js/
-│   ├── config.js                # Default fallback configuration
-│   ├── api.js                   # Client API (Auto-connects to SQLite backend)
+│   ├── config.js                # Live Supabase cloud credentials & fallback configuration
+│   ├── api.js                   # Client API (Supabase Cloud + fallback)
 │   └── app.js                   # Multi-page router & dynamic renderers
 │
-├── admin/                       # 👑 ADMIN STUDIO
-│   ├── index.html               # Admin Dashboard SPA
-│   ├── css/admin.css            # Obsidian/Lime admin panel styles
-│   └── js/admin.js              # Admin UI & CRUD controllers
-│
-├── server/                      # 🗄️ SQLITE BACKEND REST API
+├── supabase-schema.sql          # ☁️ 1-Click Cloud PostgreSQL database schema & seeder
+├── server/                      # 🗄️ LOCAL EXPRESS REST API (Optional)
 │   ├── package.json             # Express, CORS, better-sqlite3
 │   ├── server.js                # Express app entrypoint (Port 5000)
 │   ├── database.js              # SQLite database manager & schemas
 │   ├── seed.js                  # Database seeder
-│   ├── data/
-│   │   └── portfolio.db         # Persistent SQLite database file
-│   └── routes/
-│       ├── portfolio.js         # /api/portfolio
-│       ├── projects.js          # /api/projects
-│       ├── services.js          # /api/services
-│       ├── testimonials.js      # /api/testimonials
-│       └── messages.js          # /api/messages
+│   └── data/
+│       └── portfolio.db         # Local SQLite database file
 │
 ├── Dockerfile                   # Production Docker container definition
 ├── package.json                 # Root deployment package

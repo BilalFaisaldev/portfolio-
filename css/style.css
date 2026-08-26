@@ -1501,3 +1501,258 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--mint-light);
   display: flex;
 }
+
+/* ==========================================================================
+   COMPREHENSIVE RESPONSIVE SUITE & MOBILE ADAPTATIONS
+   ========================================================================== */
+
+/* Fluid Typography Helpers */
+.hero-title {
+  font-size: clamp(2.1rem, 7.5vw, 3.75rem);
+  word-break: break-word;
+}
+
+.page-title {
+  font-size: clamp(2rem, 6.5vw, 3.5rem);
+  word-break: break-word;
+}
+
+.section-title {
+  font-size: clamp(1.75rem, 5.5vw, 2.85rem);
+  word-break: break-word;
+}
+
+.cta-title {
+  font-size: clamp(1.85rem, 6vw, 3.25rem);
+  word-break: break-word;
+}
+
+/* Base Mobile Overrides (< 768px) */
+@media (max-width: 767px) {
+  .container {
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+
+  .section {
+    padding-top: 3.75rem;
+    padding-bottom: 3.75rem;
+  }
+
+  .hero-section {
+    padding-top: 7rem;
+    padding-bottom: 4rem;
+  }
+
+  .page-header {
+    padding-top: 6.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .hero-grid {
+    gap: 2.5rem;
+  }
+
+  .hero-stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+
+  .hero-stat-item h4 {
+    font-size: 1.5rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  /* macOS IDE Sandbox Card Mobile Optimization */
+  .ide-card {
+    border-radius: var(--radius-sm);
+  }
+
+  .ide-header {
+    padding: 0.6rem 0.85rem;
+    gap: 0.5rem;
+  }
+
+  .ide-tabs {
+    overflow-x: auto;
+    max-width: calc(100% - 50px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ide-tab {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.725rem;
+    white-space: nowrap;
+  }
+
+  .ide-body {
+    padding: 1rem;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    max-height: 300px;
+    min-height: 220px;
+  }
+
+  /* Bento Grid Mobile */
+  .bento-card {
+    padding: 1.5rem;
+  }
+
+  .bento-metric-row {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+
+  .metric-box h3 {
+    font-size: 1.5rem;
+  }
+
+  .metric-box p {
+    font-size: 0.7rem;
+  }
+
+  /* Projects Filter Tabs Mobile */
+  .filter-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding: 0.35rem;
+  }
+
+  .filter-tab {
+    flex-shrink: 0;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.75rem;
+  }
+
+  .project-body {
+    padding: 1.35rem;
+  }
+
+  .project-footer {
+    padding: 1rem 1.35rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  /* CTA Banner Mobile */
+  .cta-banner {
+    padding: 2.75rem 1.25rem;
+  }
+
+  .cta-desc {
+    font-size: 1rem;
+  }
+
+  /* Contact & Form Mobile */
+  .contact-info-card, .contact-form-card {
+    padding: 1.5rem;
+  }
+
+  .form-input, .form-textarea {
+    font-size: 16px; /* Prevents auto zoom in iOS Safari */
+    min-height: 44px; /* Touch target */
+  }
+
+  /* Modal on Mobile */
+  .modal-overlay {
+    padding: 1rem;
+  }
+
+  .modal-card {
+    padding: 1.5rem;
+    max-height: 85vh;
+    border-radius: var(--radius-md);
+  }
+
+  .modal-title {
+    font-size: 1.45rem;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+  }
+
+  /* Toast Alerts Mobile */
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    align-items: center;
+  }
+
+  .toast {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Mobile Navigation Drawer Dropdown */
+  .mobile-nav-drawer {
+    background: rgba(10, 14, 23, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.15rem 1.5rem;
+    display: none;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .mobile-nav-drawer.open {
+    display: flex;
+    animation: drawerSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes drawerSlideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .mobile-nav-drawer .nav-link {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-nav-drawer .nav-link:hover,
+  .mobile-nav-drawer .nav-link.active {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--mint-light);
+  }
+}
+
+/* Extra Small Devices (< 400px) */
+@media (max-width: 399px) {
+  .bento-metric-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .nav-brand-title {
+    font-size: 1rem;
+  }
+
+  .nav-avatar-box {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 0.85rem;
+  }
+}
+

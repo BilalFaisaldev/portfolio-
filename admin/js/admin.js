@@ -25,6 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * 0. Supabase Authentication Handlers
  */
+const DEFAULT_SUPABASE_URL = "https://mwkeupvqjfblnmcjncdc.supabase.co";
+const DEFAULT_SUPABASE_KEY = "sb_publishable_qaGZUN5VWvoQ7R3Mtht0IA_z4YyKmZj";
+
 function getSupabaseAuthClient() {
   if (typeof portfolioAPI !== 'undefined') {
     if (portfolioAPI.supabase && portfolioAPI.supabase.auth) {
@@ -40,16 +43,31 @@ function getSupabaseAuthClient() {
     }
   }
 
-  // Direct CDN fallback
-  const url = (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.url : '') || localStorage.getItem('portfolio_supabase_url');
-  const key = (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.anonKey : '') || localStorage.getItem('portfolio_supabase_key');
+  // Get credentials from config or storage or default
+  let url = (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.url : '') || localStorage.getItem('portfolio_supabase_url') || DEFAULT_SUPABASE_URL;
+  let key = (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.anonKey : '') || localStorage.getItem('portfolio_supabase_key') || DEFAULT_SUPABASE_KEY;
 
-  if (url && key) {
-    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-      return window.supabase.createClient(url, key);
-    }
-    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-      return supabase.createClient(url, key);
+  if (url.includes('mwkeupwqjfblnmcjncdc')) {
+    url = DEFAULT_SUPABASE_URL;
+  }
+
+  const createClientFn = (typeof window.supabase !== 'undefined' && window.supabase.createClient) 
+    ? window.supabase.createClient 
+    : (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function')
+      ? supabase.createClient
+      : (typeof window.supabaseJs !== 'undefined' && window.supabaseJs.createClient)
+        ? window.supabaseJs.createClient
+        : null;
+
+  if (createClientFn && url && key) {
+    try {
+      const client = createClientFn(url, key);
+      if (typeof portfolioAPI !== 'undefined') {
+        portfolioAPI.supabase = client;
+      }
+      return client;
+    } catch (e) {
+      console.warn('Error creating Supabase client:', e);
     }
   }
   return null;

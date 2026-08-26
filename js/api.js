@@ -41,30 +41,36 @@ class PortfolioAPI {
 
   // Initialize Supabase Cloud Client
   initSupabase() {
+    const FALLBACK_URL = "https://mwkeupvqjfblnmcjncdc.supabase.co";
+    const FALLBACK_KEY = "sb_publishable_qaGZUN5VWvoQ7R3Mtht0IA_z4YyKmZj";
+
     try {
       let savedUrl = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_URL);
       let savedKey = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_KEY);
 
       // Clean up old typo if cached in browser
       if (savedUrl && savedUrl.includes('mwkeupwqjfblnmcjncdc')) {
-        savedUrl = 'https://mwkeupvqjfblnmcjncdc.supabase.co';
+        savedUrl = FALLBACK_URL;
         localStorage.setItem(this.config.STORAGE_KEYS.SUPABASE_URL, savedUrl);
       }
 
       const configUrl = typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.url : '';
       const configKey = typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.anonKey : '';
 
-      const url = configUrl || savedUrl || '';
-      const key = configKey || savedKey || '';
+      const url = configUrl || savedUrl || FALLBACK_URL;
+      const key = configKey || savedKey || FALLBACK_KEY;
 
-      if (url && key) {
-        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-          this.supabase = window.supabase.createClient(url, key);
-          console.log('✔ Connected to Supabase Cloud Database:', url);
-        } else if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-          this.supabase = supabase.createClient(url, key);
-          console.log('✔ Connected to Supabase Cloud Database:', url);
-        }
+      const createClientFn = (typeof window.supabase !== 'undefined' && window.supabase.createClient) 
+        ? window.supabase.createClient 
+        : (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function')
+          ? supabase.createClient
+          : (typeof window.supabaseJs !== 'undefined' && window.supabaseJs.createClient)
+            ? window.supabaseJs.createClient
+            : null;
+
+      if (url && key && createClientFn) {
+        this.supabase = createClientFn(url, key);
+        console.log('✔ Connected to Supabase Cloud Database:', url);
       }
     } catch (e) {
       console.warn('Supabase initialization failed:', e);

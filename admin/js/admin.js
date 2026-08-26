@@ -339,6 +339,8 @@ function setupNavigation() {
     }
 
     if (sidebar) sidebar.classList.remove('open');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (backdrop) backdrop.classList.remove('active');
 
     // Trigger view-specific renderers
     if (viewName === 'dashboard') renderDashboardStats();
@@ -361,9 +363,21 @@ function setupNavigation() {
     viewAllInquiriesBtn.addEventListener('click', () => switchView('inquiries'));
   }
 
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (backdrop && sidebar) {
+    backdrop.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('active');
+    });
+  }
+
   if (toggleBtn && sidebar) {
     toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+      const isOpen = sidebar.classList.toggle('open');
+      if (backdrop) {
+        if (isOpen) backdrop.classList.add('active');
+        else backdrop.classList.remove('active');
+      }
     });
   }
 }

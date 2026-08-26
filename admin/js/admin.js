@@ -944,6 +944,7 @@ function setupProfileController() {
     const aboutParasText = document.getElementById('setting-about-paragraphs').value.trim();
 
     const paragraphs = aboutParasText.split('\n\n').map(p => p.trim()).filter(Boolean);
+    const existingAbout = (cachedPortfolioData.personal && cachedPortfolioData.personal.about) || {};
 
     const updatedPersonal = {
       name,
@@ -956,9 +957,11 @@ function setupProfileController() {
       linkedinUrl,
       calendlyUrl,
       about: {
-        tag: 'ABOUT ME',
-        title: 'Building Scalable Solutions From Concept to Deployment',
-        paragraphs
+        ...existingAbout,
+        tag: existingAbout.tag || 'ENGINEERING PHILOSOPHY',
+        title: existingAbout.title || 'Building Resilient Systems That Scale Under Pressure',
+        bioText: aboutParasText,
+        paragraphs: paragraphs.length ? paragraphs : [aboutParasText]
       }
     };
 
@@ -970,6 +973,7 @@ function setupProfileController() {
 
 function populateProfileForm() {
   const p = cachedPortfolioData.personal || {};
+  const configP = (typeof portfolioConfig !== 'undefined' && portfolioConfig.personal) ? portfolioConfig.personal : {};
 
   const nameInput = document.getElementById('setting-name');
   const roleInput = document.getElementById('setting-role');
@@ -981,17 +985,26 @@ function populateProfileForm() {
   const calendlyInput = document.getElementById('setting-calendly');
   const aboutParasInput = document.getElementById('setting-about-paragraphs');
 
-  if (nameInput) nameInput.value = p.name || '';
-  if (roleInput) roleInput.value = p.roleBadge || '';
-  if (subheadlineInput) subheadlineInput.value = p.subheadline || '';
-  if (emailInput) emailInput.value = p.email || '';
-  if (phoneInput) phoneInput.value = p.phone || '';
-  if (githubInput) githubInput.value = p.githubUrl || '';
-  if (linkedinInput) linkedinInput.value = p.linkedinUrl || '';
-  if (calendlyInput) calendlyInput.value = p.calendlyUrl || '';
+  if (nameInput) nameInput.value = p.name || configP.name || 'Bilal Faisal';
+  if (roleInput) roleInput.value = p.roleBadge || configP.roleBadge || 'Senior Full Stack & Cloud Engineer';
+  if (subheadlineInput) subheadlineInput.value = p.subheadline || configP.subheadline || '';
+  if (emailInput) emailInput.value = p.email || configP.email || 'contact@bilalfaisal.dev';
+  if (phoneInput) phoneInput.value = p.phone || configP.phone || '+92 300 1234567';
+  if (githubInput) githubInput.value = p.githubUrl || configP.githubUrl || 'https://github.com/BilalFaisaldev';
+  if (linkedinInput) linkedinInput.value = p.linkedinUrl || configP.linkedinUrl || 'https://linkedin.com/';
+  if (calendlyInput) calendlyInput.value = p.calendlyUrl || configP.calendlyUrl || 'https://calendly.com/bilalfaisalarain/30min';
 
-  if (aboutParasInput && p.about && p.about.paragraphs) {
-    aboutParasInput.value = p.about.paragraphs.join('\n\n');
+  if (aboutParasInput) {
+    const aboutData = p.about || configP.about || {};
+    if (aboutData.bioText) {
+      aboutParasInput.value = aboutData.bioText;
+    } else if (aboutData.paragraphs && Array.isArray(aboutData.paragraphs)) {
+      aboutParasInput.value = aboutData.paragraphs.join('\n\n');
+    } else if (typeof aboutData === 'string') {
+      aboutParasInput.value = aboutData;
+    } else if (configP.about && configP.about.bioText) {
+      aboutParasInput.value = configP.about.bioText;
+    }
   }
 }
 

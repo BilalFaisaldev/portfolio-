@@ -91,6 +91,9 @@ class PortfolioAPI {
   // 1. Portfolio Aggregated Data
   // ==========================================
   async getPortfolioData() {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
     // 1. Try Supabase Cloud first
     if (this.supabase) {
       try {

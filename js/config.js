@@ -5,10 +5,9 @@
 
 const portfolioConfig = {
   // ☁️ SUPABASE CLOUD DATABASE CONFIGURATION
-  // Paste your Supabase Project URL & Anon Public Key here (or configure via Admin Panel Settings)
   supabase: {
-    url: "",      // e.g. "https://xyzcompany.supabase.co"
-    anonKey: ""  // e.g. "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    url: "https://mwkeupvqjfblnmcjncdc.supabase.co",
+    anonKey: "sb_publishable_qaGZUN5VWvoQ7R3Mtht0IA_z4YyKmZj"
   },
 
   personal: {

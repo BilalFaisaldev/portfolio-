@@ -40,7 +40,14 @@ Individual standalone pages with active navigation link indicators:
 - 📂 **Projects** (`projects.html`) — Complete portfolio catalogue with category filter tabs (**All / Client Work / Personal**), browser mockup cards, and case study modal dialogs.
 - 📬 **Contact** (`contact.html`) — Direct reachout info, 30-min Calendly integration, and direct message form.
 
-### ☁️ 5. Supabase Cloud PostgreSQL Database
+### 👑 5. Dedicated Portfolio Admin Studio (`/admin/`)
+- **Dashboard Metrics**: Live metric counters for Total Projects, Active Services, Client Reviews, and Contact Inquiries.
+- **Projects Manager (Full CRUD)**: Create, edit, and delete client & personal projects with live Supabase cloud sync.
+- **Services & Testimonials Manager (Full CRUD)**: Manage service deliverables and client reviews with star ratings.
+- **Contact Inbox**: Incoming messages submitted via `contact.html` appear immediately with unread badge indicators and direct email reply triggers.
+- **Profile & Bio Settings**: Update headline, subheadline, avatar text, phone, email, Calendly URL, and social links.
+
+### ☁️ 6. Supabase Cloud PostgreSQL Database
 - **Persistent Storage**: All portfolio data stored permanently in Supabase Cloud PostgreSQL.
 - **Auto-Initialization**: Automatic fallback and real-time cloud data querying.
 - **Instant Global Sync**: Fast worldwide edge access without server cold-starts.

@@ -42,11 +42,20 @@ class PortfolioAPI {
   // Initialize Supabase Cloud Client
   initSupabase() {
     try {
-      const savedUrl = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_URL);
-      const savedKey = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_KEY);
+      let savedUrl = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_URL);
+      let savedKey = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_KEY);
 
-      const url = savedUrl || (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase && portfolioConfig.supabase.url) || '';
-      const key = savedKey || (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase && portfolioConfig.supabase.anonKey) || '';
+      // Clean up old typo if cached in browser
+      if (savedUrl && savedUrl.includes('mwkeupwqjfblnmcjncdc')) {
+        savedUrl = 'https://mwkeupvqjfblnmcjncdc.supabase.co';
+        localStorage.setItem(this.config.STORAGE_KEYS.SUPABASE_URL, savedUrl);
+      }
+
+      const configUrl = typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.url : '';
+      const configKey = typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.anonKey : '';
+
+      const url = configUrl || savedUrl || '';
+      const key = configKey || savedKey || '';
 
       if (url && key && typeof window.supabase !== 'undefined') {
         this.supabase = window.supabase.createClient(url, key);
@@ -184,32 +193,37 @@ class PortfolioAPI {
   // 2. Update Personal Profile
   // ==========================================
   async updatePersonal(personalData) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     // 1. Supabase Cloud
     if (this.supabase) {
-      try {
-        const { error } = await this.supabase.from('personal_info').upsert({
-          id: 1,
-          name: personalData.name,
-          role_badge: personalData.roleBadge,
-          headline_start: personalData.headlineStart,
-          headline_gradient: personalData.headlineGradient,
-          headline_end: personalData.headlineEnd,
-          subheadline: personalData.subheadline,
-          avatar_text: personalData.avatarText,
-          status_badge: personalData.statusBadge,
-          github_url: personalData.githubUrl,
-          linkedin_url: personalData.linkedinUrl,
-          email: personalData.email,
-          phone: personalData.phone,
-          calendly_url: personalData.calendlyUrl,
-          location: personalData.location,
-          hero_stats: personalData.heroStats,
-          about_data: personalData.about
-        });
-        if (!error) return { success: true };
-      } catch (err) {
-        console.warn('Supabase update error:', err);
+      const { error } = await this.supabase.from('personal_info').upsert({
+        id: 1,
+        name: personalData.name,
+        role_badge: personalData.roleBadge,
+        headline_start: personalData.headlineStart,
+        headline_gradient: personalData.headlineGradient,
+        headline_end: personalData.headlineEnd,
+        subheadline: personalData.subheadline,
+        avatar_text: personalData.avatarText,
+        status_badge: personalData.statusBadge,
+        github_url: personalData.githubUrl,
+        linkedin_url: personalData.linkedinUrl,
+        email: personalData.email,
+        phone: personalData.phone,
+        calendly_url: personalData.calendlyUrl,
+        location: personalData.location,
+        hero_stats: personalData.heroStats,
+        about_data: personalData.about
+      });
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
       }
+      return { success: true };
     }
 
     // 2. Local REST API
@@ -238,28 +252,32 @@ class PortfolioAPI {
   }
 
   async addProject(project) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
     const id = project.id || project.title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
     const newProj = { id, ...project };
 
     // 1. Supabase Cloud
     if (this.supabase) {
-      try {
-        const { error } = await this.supabase.from('projects').insert([{
-          id,
-          type: project.type || 'client',
-          title: project.title,
-          subtitle: project.subtitle || '',
-          short_description: project.shortDescription || '',
-          full_description: project.fullDescription || '',
-          tags: project.tags || [],
-          live_url: project.liveUrl || '',
-          github_url: project.githubUrl || '',
-          featured: project.featured !== undefined ? project.featured : true
-        }]);
-        if (!error) return newProj;
-      } catch (err) {
-        console.warn('Supabase add project error:', err);
+      const { data, error } = await this.supabase.from('projects').insert([{
+        id,
+        type: project.type || 'client',
+        title: project.title,
+        subtitle: project.subtitle || '',
+        short_description: project.shortDescription || '',
+        full_description: project.fullDescription || '',
+        tags: project.tags || [],
+        live_url: project.liveUrl || '',
+        github_url: project.githubUrl || '',
+        featured: project.featured !== undefined ? project.featured : true
+      }]).select();
+
+      if (error) {
+        console.error('Supabase add project error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
       }
+      return newProj;
     }
 
     // 2. Local REST API
@@ -284,24 +302,29 @@ class PortfolioAPI {
   }
 
   async updateProject(id, updated) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     // 1. Supabase Cloud
     if (this.supabase) {
-      try {
-        const { error } = await this.supabase.from('projects').update({
-          type: updated.type,
-          title: updated.title,
-          subtitle: updated.subtitle,
-          short_description: updated.shortDescription,
-          full_description: updated.fullDescription,
-          tags: updated.tags,
-          live_url: updated.liveUrl,
-          github_url: updated.githubUrl,
-          featured: updated.featured
-        }).eq('id', id);
-        if (!error) return { success: true };
-      } catch (err) {
-        console.warn('Supabase update project error:', err);
+      const { error } = await this.supabase.from('projects').update({
+        type: updated.type,
+        title: updated.title,
+        subtitle: updated.subtitle,
+        short_description: updated.shortDescription,
+        full_description: updated.fullDescription,
+        tags: updated.tags,
+        live_url: updated.liveUrl,
+        github_url: updated.githubUrl,
+        featured: updated.featured
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Supabase update project error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
       }
+      return { success: true };
     }
 
     // 2. Local REST API
@@ -325,14 +348,18 @@ class PortfolioAPI {
   }
 
   async deleteProject(id) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     // 1. Supabase Cloud
     if (this.supabase) {
-      try {
-        const { error } = await this.supabase.from('projects').delete().eq('id', id);
-        if (!error) return { success: true };
-      } catch (err) {
-        console.warn('Supabase delete project error:', err);
+      const { error } = await this.supabase.from('projects').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase delete project error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
       }
+      return { success: true };
     }
 
     // 2. Local REST API
@@ -357,16 +384,23 @@ class PortfolioAPI {
   }
 
   async addService(service) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     if (this.supabase) {
-      try {
-        const { data, error } = await this.supabase.from('services').insert([{
-          title: service.title,
-          description: service.description,
-          bullets: service.bullets || [],
-          icon: service.icon || ''
-        }]).select();
-        if (!error && data) return data[0];
-      } catch (e) {}
+      const { data, error } = await this.supabase.from('services').insert([{
+        title: service.title,
+        description: service.description,
+        bullets: service.bullets || [],
+        icon: service.icon || ''
+      }]).select();
+
+      if (error) {
+        console.error('Supabase add service error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
+      }
+      return data && data[0] ? data[0] : service;
     }
 
     try {
@@ -386,16 +420,23 @@ class PortfolioAPI {
   }
 
   async updateService(id, updated) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     if (this.supabase) {
-      try {
-        await this.supabase.from('services').update({
-          title: updated.title,
-          description: updated.description,
-          bullets: updated.bullets,
-          icon: updated.icon
-        }).eq('id', id);
-        return { success: true };
-      } catch (e) {}
+      const { error } = await this.supabase.from('services').update({
+        title: updated.title,
+        description: updated.description,
+        bullets: updated.bullets,
+        icon: updated.icon
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Supabase update service error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
+      }
+      return { success: true };
     }
 
     try {
@@ -416,11 +457,17 @@ class PortfolioAPI {
   }
 
   async deleteService(id) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     if (this.supabase) {
-      try {
-        await this.supabase.from('services').delete().eq('id', id);
-        return { success: true };
-      } catch (e) {}
+      const { error } = await this.supabase.from('services').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase delete service error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
+      }
+      return { success: true };
     }
 
     try {
@@ -445,17 +492,24 @@ class PortfolioAPI {
   }
 
   async addTestimonial(testi) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     if (this.supabase) {
-      try {
-        const { data, error } = await this.supabase.from('testimonials').insert([{
-          name: testi.name,
-          role: testi.role,
-          quote: testi.quote,
-          full_quote: testi.fullQuote || testi.quote,
-          rating: testi.rating || 5
-        }]).select();
-        if (!error && data) return data[0];
-      } catch (e) {}
+      const { data, error } = await this.supabase.from('testimonials').insert([{
+        name: testi.name,
+        role: testi.role,
+        quote: testi.quote,
+        full_quote: testi.fullQuote || testi.quote,
+        rating: testi.rating || 5
+      }]).select();
+
+      if (error) {
+        console.error('Supabase add testimonial error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
+      }
+      return data && data[0] ? data[0] : testi;
     }
 
     try {
@@ -475,17 +529,24 @@ class PortfolioAPI {
   }
 
   async updateTestimonial(id, updated) {
+    if (!this.supabase && typeof window.supabase !== 'undefined') {
+      this.initSupabase();
+    }
+
     if (this.supabase) {
-      try {
-        await this.supabase.from('testimonials').update({
-          name: updated.name,
-          role: updated.role,
-          quote: updated.quote,
-          full_quote: updated.fullQuote,
-          rating: updated.rating
-        }).eq('id', id);
-        return { success: true };
-      } catch (e) {}
+      const { error } = await this.supabase.from('testimonials').update({
+        name: updated.name,
+        role: updated.role,
+        quote: updated.quote,
+        full_quote: updated.fullQuote,
+        rating: updated.rating
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Supabase update testimonial error:', error);
+        throw new Error('Supabase Cloud Error: ' + error.message);
+      }
+      return { success: true };
     }
 
     try {

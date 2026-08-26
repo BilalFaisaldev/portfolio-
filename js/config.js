@@ -4,6 +4,13 @@
  */
 
 const portfolioConfig = {
+  // ☁️ SUPABASE CLOUD DATABASE CONFIGURATION
+  // Paste your Supabase Project URL & Anon Public Key here (or configure via Admin Panel Settings)
+  supabase: {
+    url: "",      // e.g. "https://xyzcompany.supabase.co"
+    anonKey: ""  // e.g. "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  },
+
   personal: {
     name: "Bilal Faisal",
     roleBadge: "Senior Full Stack & Cloud Engineer",
@@ -13,7 +20,7 @@ const portfolioConfig = {
     subheadline: "I bridge complex business logic with clean, scalable code. Specializing in high-concurrency Node.js/TypeScript backends, modern Next.js frontends, and cloud-native systems.",
     avatarText: "BF",
     statusBadge: "Available for Q2/Q3 Projects & Contracts",
-    githubUrl: "https://github.com/",
+    githubUrl: "https://github.com/BilalFaisaldev",
     linkedinUrl: "https://linkedin.com/",
     email: "contact@bilalfaisal.dev",
     phone: "+92 300 1234567",

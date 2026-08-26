@@ -100,19 +100,23 @@ function updateUnreadBadge() {
 
 function updateApiStatusBadge() {
   const badge = document.getElementById('api-status-badge');
-  const cfg = portfolioAPI.getApiConfig();
-  if (badge) {
-    if (cfg.USE_LIVE_API) {
-      badge.textContent = 'REST API Connected';
-      badge.style.color = '#60a5fa';
-      badge.style.borderColor = 'rgba(96, 165, 250, 0.4)';
-      badge.style.backgroundColor = 'rgba(59, 130, 246, 0.12)';
-    } else {
-      badge.textContent = 'LocalStorage Mode';
-      badge.style.color = 'var(--primary)';
-      badge.style.borderColor = 'var(--primary-border)';
-      badge.style.backgroundColor = 'var(--primary-light)';
-    }
+  if (!badge) return;
+
+  if (portfolioAPI.isCloudConnected()) {
+    badge.textContent = '🟢 Supabase Cloud Live';
+    badge.style.color = '#10b981';
+    badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    badge.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
+  } else if (portfolioAPI.config.USE_LIVE_API) {
+    badge.textContent = 'REST API Connected';
+    badge.style.color = '#60a5fa';
+    badge.style.borderColor = 'rgba(96, 165, 250, 0.4)';
+    badge.style.backgroundColor = 'rgba(59, 130, 246, 0.12)';
+  } else {
+    badge.textContent = 'LocalStorage Mode';
+    badge.style.color = 'var(--primary)';
+    badge.style.borderColor = 'var(--primary-border)';
+    badge.style.backgroundColor = 'var(--primary-light)';
   }
 }
 
@@ -801,9 +805,67 @@ function populateProfileForm() {
 }
 
 /**
- * 8. API Configuration Controller
+ * 8. API & Cloud Database Controller
  */
 function setupApiController() {
+  // Supabase Cloud Form
+  const supaForm = document.getElementById('supabase-config-form');
+  const supaTestBtn = document.getElementById('btn-test-supabase');
+
+  if (supaForm) {
+    supaForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = document.getElementById('supabase-project-url').value.trim();
+      const key = document.getElementById('supabase-anon-key').value.trim();
+
+      portfolioAPI.setSupabaseCredentials(url, key);
+      updateSupabaseStatusBadge();
+      showAdminToast('Supabase Cloud credentials saved! Reloading cloud data...');
+      await loadAdminData();
+      renderDashboard();
+    });
+  }
+
+  if (supaTestBtn) {
+    supaTestBtn.addEventListener('click', async () => {
+      const url = document.getElementById('supabase-project-url').value.trim();
+      const key = document.getElementById('supabase-anon-key').value.trim();
+
+      if (!url || !key) {
+        showAdminToast('Please enter both Supabase URL and Anon Key first', 'error');
+        return;
+      }
+
+      supaTestBtn.disabled = true;
+      supaTestBtn.textContent = 'Testing Cloud...';
+
+      try {
+        if (typeof window.supabase === 'undefined') {
+          throw new Error('Supabase client library is loading...');
+        }
+        const testClient = window.supabase.createClient(url, key);
+        const { data, error } = await testClient.from('personal_info').select('*').limit(1);
+
+        supaTestBtn.disabled = false;
+        supaTestBtn.textContent = 'Test Cloud Connection';
+
+        if (!error) {
+          showAdminToast('🎉 Cloud Database Connected Successfully! PostgreSQL is Live.');
+          portfolioAPI.setSupabaseCredentials(url, key);
+          updateSupabaseStatusBadge();
+          await loadAdminData();
+        } else {
+          showAdminToast(`Supabase error: ${error.message}. Did you run supabase-schema.sql?`, 'error');
+        }
+      } catch (err) {
+        supaTestBtn.disabled = false;
+        supaTestBtn.textContent = 'Test Cloud Connection';
+        showAdminToast(`Connection failed: ${err.message}`, 'error');
+      }
+    });
+  }
+
+  // REST API Form
   const form = document.getElementById('api-config-form');
   const testBtn = document.getElementById('btn-test-api');
 
@@ -818,9 +880,8 @@ function setupApiController() {
         BASE_URL: baseUrl || 'http://localhost:5000/api'
       };
 
-      portfolioAPI.saveApiConfig(config);
-      updateApiStatusBadge();
-      showAdminToast('API configuration updated successfully!');
+      portfolioAPI.saveConfig(config);
+      showAdminToast('REST API configuration updated successfully!');
     });
   }
 
@@ -833,28 +894,50 @@ function setupApiController() {
       try {
         const res = await fetch(`${baseUrl}/portfolio`, { method: 'GET' });
         testBtn.disabled = false;
-        testBtn.textContent = 'Test Connection';
+        testBtn.textContent = 'Test REST Connection';
         if (res.ok) {
-          showAdminToast('API connection successful! (HTTP 200)');
+          showAdminToast('REST API connection successful! (HTTP 200)');
         } else {
           showAdminToast(`API responded with status ${res.status}`, 'error');
         }
       } catch (err) {
         testBtn.disabled = false;
-        testBtn.textContent = 'Test Connection';
+        testBtn.textContent = 'Test REST Connection';
         showAdminToast(`Could not reach API server at ${baseUrl}. Ensure your backend is running.`, 'error');
       }
     });
   }
 }
 
+function updateSupabaseStatusBadge() {
+  const badge = document.getElementById('supabase-status-badge');
+  if (!badge) return;
+
+  if (portfolioAPI.isCloudConnected()) {
+    badge.textContent = '🟢 Cloud PostgreSQL Live';
+    badge.className = 'badge badge-client';
+  } else {
+    badge.textContent = '🟡 Offline / LocalStorage Mode';
+    badge.className = 'badge';
+  }
+}
+
 function populateApiSettingsForm() {
-  const cfg = portfolioAPI.getApiConfig();
+  // Populate Supabase
+  const supaCreds = portfolioAPI.getSupabaseCredentials();
+  const urlInput = document.getElementById('supabase-project-url');
+  const keyInput = document.getElementById('supabase-anon-key');
+
+  if (urlInput) urlInput.value = supaCreds.url || '';
+  if (keyInput) keyInput.value = supaCreds.key || '';
+  updateSupabaseStatusBadge();
+
+  // Populate REST
   const modeSelect = document.getElementById('api-mode-select');
   const baseUrlInput = document.getElementById('api-base-url');
 
-  if (modeSelect) modeSelect.value = cfg.USE_LIVE_API ? 'true' : 'false';
-  if (baseUrlInput) baseUrlInput.value = cfg.BASE_URL || '';
+  if (modeSelect) modeSelect.value = portfolioAPI.config.USE_LIVE_API ? 'true' : 'false';
+  if (baseUrlInput) baseUrlInput.value = portfolioAPI.config.BASE_URL || '';
 }
 
 /**

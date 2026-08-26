@@ -1,20 +1,24 @@
 /**
- * Minimalist Developer Portfolio - Client-Side API & SQLite Backend Adapter
- * Handles data fetching, live synchronization with Node.js/SQLite backend, and offline LocalStorage fallback.
+ * Minimalist Developer Portfolio - Universal Cloud Database & API Service
+ * Supports Supabase (Cloud PostgreSQL), Node.js Express REST API, and Offline LocalStorage Fallback.
  */
 
 const API_CONFIG = {
-  USE_LIVE_API: true, // Connect to live Node.js + SQLite REST API
+  USE_LIVE_API: true,
   BASE_URL: 'http://localhost:5000/api',
   STORAGE_KEYS: {
     PORTFOLIO: 'portfolio_data_v1',
-    MESSAGES: 'portfolio_messages_v1'
+    MESSAGES: 'portfolio_messages_v1',
+    SUPABASE_URL: 'portfolio_supabase_url',
+    SUPABASE_KEY: 'portfolio_supabase_key'
   }
 };
 
 class PortfolioAPI {
   constructor() {
     this.config = this.loadConfig();
+    this.supabase = null;
+    this.initSupabase();
     this.initLocalStorage();
   }
 
@@ -35,6 +39,43 @@ class PortfolioAPI {
     localStorage.setItem('portfolio_api_config', JSON.stringify(this.config));
   }
 
+  // Initialize Supabase Cloud Client
+  initSupabase() {
+    try {
+      const savedUrl = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_URL);
+      const savedKey = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_KEY);
+
+      const url = savedUrl || (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase && portfolioConfig.supabase.url) || '';
+      const key = savedKey || (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase && portfolioConfig.supabase.anonKey) || '';
+
+      if (url && key && typeof window.supabase !== 'undefined') {
+        this.supabase = window.supabase.createClient(url, key);
+        console.log('✔ Connected to Supabase Cloud Database:', url);
+      }
+    } catch (e) {
+      console.warn('Supabase initialization failed:', e);
+    }
+  }
+
+  setSupabaseCredentials(url, key) {
+    localStorage.setItem(this.config.STORAGE_KEYS.SUPABASE_URL, url.trim());
+    localStorage.setItem(this.config.STORAGE_KEYS.SUPABASE_KEY, key.trim());
+    this.initSupabase();
+  }
+
+  getSupabaseCredentials() {
+    const savedUrl = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_URL);
+    const savedKey = localStorage.getItem(this.config.STORAGE_KEYS.SUPABASE_KEY);
+    return {
+      url: savedUrl || (portfolioConfig && portfolioConfig.supabase && portfolioConfig.supabase.url) || '',
+      key: savedKey || (portfolioConfig && portfolioConfig.supabase && portfolioConfig.supabase.anonKey) || ''
+    };
+  }
+
+  isCloudConnected() {
+    return Boolean(this.supabase);
+  }
+
   initLocalStorage() {
     if (!localStorage.getItem(this.config.STORAGE_KEYS.PORTFOLIO)) {
       if (typeof portfolioConfig !== 'undefined') {
@@ -46,117 +87,293 @@ class PortfolioAPI {
     }
   }
 
-  /**
-   * Helper for REST API calls with fallback
-   */
-  async request(endpoint, options = {}) {
-    if (this.config.USE_LIVE_API) {
+  // ==========================================
+  // 1. Portfolio Aggregated Data
+  // ==========================================
+  async getPortfolioData() {
+    // 1. Try Supabase Cloud first
+    if (this.supabase) {
       try {
-        const url = `${this.config.BASE_URL}${endpoint}`;
-        const res = await fetch(url, {
-          headers: { 'Content-Type': 'application/json', ...options.headers },
-          ...options
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status} on ${endpoint}`);
-        const data = await res.json();
-        return data.data !== undefined ? data.data : data;
+        const [personalRes, projectsRes, servicesRes, processRes, testimonialsRes] = await Promise.all([
+          this.supabase.from('personal_info').select('*').eq('id', 1).single(),
+          this.supabase.from('projects').select('*').order('created_at', { ascending: false }),
+          this.supabase.from('services').select('*'),
+          this.supabase.from('process_steps').select('*'),
+          this.supabase.from('testimonials').select('*')
+        ]);
+
+        if (!personalRes.error && personalRes.data) {
+          const row = personalRes.data;
+          const personal = {
+            name: row.name || "Bilal Faisal",
+            roleBadge: row.role_badge || "Senior Full Stack & Cloud Engineer",
+            headlineStart: row.headline_start || "Engineering",
+            headlineGradient: row.headline_gradient || "Scalable Web Platforms",
+            headlineEnd: row.headline_end || "& High-Performance Cloud Architectures.",
+            subheadline: row.subheadline || "",
+            avatarText: row.avatar_text || "BF",
+            statusBadge: row.status_badge || "Available for Q2/Q3 Projects & Contracts",
+            githubUrl: row.github_url || "",
+            linkedinUrl: row.linkedin_url || "",
+            email: row.email || "contact@bilalfaisal.dev",
+            phone: row.phone || "+92 300 1234567",
+            calendlyUrl: row.calendly_url || "https://calendly.com/",
+            location: row.location || "Islamabad, PK (Remote Worldwide)",
+            heroStats: Array.isArray(row.hero_stats) ? row.hero_stats : [],
+            about: typeof row.about_data === 'object' ? row.about_data : {}
+          };
+
+          const projects = (projectsRes.data || []).map(p => ({
+            id: p.id,
+            type: p.type,
+            title: p.title,
+            subtitle: p.subtitle,
+            shortDescription: p.short_description,
+            fullDescription: p.full_description,
+            tags: Array.isArray(p.tags) ? p.tags : [],
+            liveUrl: p.live_url,
+            githubUrl: p.github_url,
+            featured: Boolean(p.featured)
+          }));
+
+          const services = (servicesRes.data || []).map(s => ({
+            id: s.id,
+            title: s.title,
+            description: s.description,
+            bullets: Array.isArray(s.bullets) ? s.bullets : [],
+            icon: s.icon
+          }));
+
+          const process = processRes.data || [];
+          const testimonials = testimonialsRes.data || [];
+
+          const cloudData = { personal, projects, services, process, testimonials };
+          localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(cloudData));
+          return cloudData;
+        }
       } catch (err) {
-        console.warn(`[Live API Offline] Falling back to LocalStorage for ${endpoint}:`, err.message);
+        console.warn('Failed to fetch from Supabase Cloud:', err.message);
       }
     }
-    return null;
-  }
 
-  // --- Portfolio Data ---
-  async getPortfolioData() {
-    const liveData = await this.request('/portfolio');
-    if (liveData) {
-      localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(liveData));
-      return liveData;
+    // 2. Try Local REST API (Port 5000)
+    if (this.config.USE_LIVE_API) {
+      try {
+        const res = await fetch(`${this.config.BASE_URL}/portfolio`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data) {
+            localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(json.data));
+            return json.data;
+          }
+        }
+      } catch (err) {
+        // Continue to fallback
+      }
     }
+
+    // 3. Fallback to LocalStorage / Config
     const raw = localStorage.getItem(this.config.STORAGE_KEYS.PORTFOLIO);
     return raw ? JSON.parse(raw) : (typeof portfolioConfig !== 'undefined' ? portfolioConfig : {});
   }
 
+  // ==========================================
+  // 2. Update Personal Profile
+  // ==========================================
   async updatePersonal(personalData) {
-    const res = await this.request('/portfolio/personal', {
-      method: 'PUT',
-      body: JSON.stringify(personalData)
-    });
-    if (res) return res;
+    // 1. Supabase Cloud
+    if (this.supabase) {
+      try {
+        const { error } = await this.supabase.from('personal_info').upsert({
+          id: 1,
+          name: personalData.name,
+          role_badge: personalData.roleBadge,
+          headline_start: personalData.headlineStart,
+          headline_gradient: personalData.headlineGradient,
+          headline_end: personalData.headlineEnd,
+          subheadline: personalData.subheadline,
+          avatar_text: personalData.avatarText,
+          status_badge: personalData.statusBadge,
+          github_url: personalData.githubUrl,
+          linkedin_url: personalData.linkedinUrl,
+          email: personalData.email,
+          phone: personalData.phone,
+          calendly_url: personalData.calendlyUrl,
+          location: personalData.location,
+          hero_stats: personalData.heroStats,
+          about_data: personalData.about
+        });
+        if (!error) return { success: true };
+      } catch (err) {
+        console.warn('Supabase update error:', err);
+      }
+    }
 
+    // 2. Local REST API
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/portfolio/personal`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(personalData)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+
+    // 3. LocalStorage
     const current = await this.getPortfolioData();
     current.personal = { ...current.personal, ...personalData };
     localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(current));
     return { success: true };
   }
 
-  // --- Projects ---
+  // ==========================================
+  // 3. Projects CRUD
+  // ==========================================
   async getProjects() {
-    const live = await this.request('/projects');
-    if (live) return live;
     const data = await this.getPortfolioData();
     return data.projects || [];
   }
 
   async addProject(project) {
-    const live = await this.request('/projects', {
-      method: 'POST',
-      body: JSON.stringify(project)
-    });
-    if (live) return live;
+    const id = project.id || project.title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
+    const newProj = { id, ...project };
 
+    // 1. Supabase Cloud
+    if (this.supabase) {
+      try {
+        const { error } = await this.supabase.from('projects').insert([{
+          id,
+          type: project.type || 'client',
+          title: project.title,
+          subtitle: project.subtitle || '',
+          short_description: project.shortDescription || '',
+          full_description: project.fullDescription || '',
+          tags: project.tags || [],
+          live_url: project.liveUrl || '',
+          github_url: project.githubUrl || '',
+          featured: project.featured !== undefined ? project.featured : true
+        }]);
+        if (!error) return newProj;
+      } catch (err) {
+        console.warn('Supabase add project error:', err);
+      }
+    }
+
+    // 2. Local REST API
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/projects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProj)
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || newProj;
+      }
+    } catch (e) {}
+
+    // 3. LocalStorage
     const data = await this.getPortfolioData();
-    const newProj = {
-      id: project.id || project.title.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now(),
-      ...project
-    };
     data.projects = data.projects || [];
     data.projects.unshift(newProj);
     localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(data));
     return newProj;
   }
 
-  async updateProject(id, updatedProject) {
-    const live = await this.request(`/projects/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updatedProject)
-    });
-    if (live) return live;
+  async updateProject(id, updated) {
+    // 1. Supabase Cloud
+    if (this.supabase) {
+      try {
+        const { error } = await this.supabase.from('projects').update({
+          type: updated.type,
+          title: updated.title,
+          subtitle: updated.subtitle,
+          short_description: updated.shortDescription,
+          full_description: updated.fullDescription,
+          tags: updated.tags,
+          live_url: updated.liveUrl,
+          github_url: updated.githubUrl,
+          featured: updated.featured
+        }).eq('id', id);
+        if (!error) return { success: true };
+      } catch (err) {
+        console.warn('Supabase update project error:', err);
+      }
+    }
 
+    // 2. Local REST API
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/projects/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+
+    // 3. LocalStorage
     const data = await this.getPortfolioData();
     const idx = (data.projects || []).findIndex(p => p.id === id);
     if (idx !== -1) {
-      data.projects[idx] = { ...data.projects[idx], ...updatedProject };
+      data.projects[idx] = { ...data.projects[idx], ...updated };
       localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(data));
     }
     return { success: true };
   }
 
   async deleteProject(id) {
-    const live = await this.request(`/projects/${id}`, { method: 'DELETE' });
-    if (live) return live;
+    // 1. Supabase Cloud
+    if (this.supabase) {
+      try {
+        const { error } = await this.supabase.from('projects').delete().eq('id', id);
+        if (!error) return { success: true };
+      } catch (err) {
+        console.warn('Supabase delete project error:', err);
+      }
+    }
 
+    // 2. Local REST API
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/projects/${id}`, { method: 'DELETE' });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+
+    // 3. LocalStorage
     const data = await this.getPortfolioData();
     data.projects = (data.projects || []).filter(p => p.id !== id);
     localStorage.setItem(this.config.STORAGE_KEYS.PORTFOLIO, JSON.stringify(data));
     return { success: true };
   }
 
-  // --- Services ---
+  // ==========================================
+  // 4. Services CRUD
+  // ==========================================
   async getServices() {
-    const live = await this.request('/services');
-    if (live) return live;
     const data = await this.getPortfolioData();
     return data.services || [];
   }
 
   async addService(service) {
-    const live = await this.request('/services', {
-      method: 'POST',
-      body: JSON.stringify(service)
-    });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        const { data, error } = await this.supabase.from('services').insert([{
+          title: service.title,
+          description: service.description,
+          bullets: service.bullets || [],
+          icon: service.icon || ''
+        }]).select();
+        if (!error && data) return data[0];
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/services`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(service)
+      });
+      if (res.ok) return (await res.json()).data;
+    } catch (e) {}
 
     const data = await this.getPortfolioData();
     data.services = data.services || [];
@@ -166,11 +383,26 @@ class PortfolioAPI {
   }
 
   async updateService(id, updated) {
-    const live = await this.request(`/services/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updated)
-    });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        await this.supabase.from('services').update({
+          title: updated.title,
+          description: updated.description,
+          bullets: updated.bullets,
+          icon: updated.icon
+        }).eq('id', id);
+        return { success: true };
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/services/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
 
     const data = await this.getPortfolioData();
     if (data.services && data.services[id]) {
@@ -181,8 +413,17 @@ class PortfolioAPI {
   }
 
   async deleteService(id) {
-    const live = await this.request(`/services/${id}`, { method: 'DELETE' });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        await this.supabase.from('services').delete().eq('id', id);
+        return { success: true };
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/services/${id}`, { method: 'DELETE' });
+      if (res.ok) return await res.json();
+    } catch (e) {}
 
     const data = await this.getPortfolioData();
     if (data.services) {
@@ -192,20 +433,36 @@ class PortfolioAPI {
     return { success: true };
   }
 
-  // --- Testimonials ---
+  // ==========================================
+  // 5. Testimonials CRUD
+  // ==========================================
   async getTestimonials() {
-    const live = await this.request('/testimonials');
-    if (live) return live;
     const data = await this.getPortfolioData();
     return data.testimonials || [];
   }
 
   async addTestimonial(testi) {
-    const live = await this.request('/testimonials', {
-      method: 'POST',
-      body: JSON.stringify(testi)
-    });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        const { data, error } = await this.supabase.from('testimonials').insert([{
+          name: testi.name,
+          role: testi.role,
+          quote: testi.quote,
+          full_quote: testi.fullQuote || testi.quote,
+          rating: testi.rating || 5
+        }]).select();
+        if (!error && data) return data[0];
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/testimonials`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testi)
+      });
+      if (res.ok) return (await res.json()).data;
+    } catch (e) {}
 
     const data = await this.getPortfolioData();
     data.testimonials = data.testimonials || [];
@@ -215,11 +472,27 @@ class PortfolioAPI {
   }
 
   async updateTestimonial(id, updated) {
-    const live = await this.request(`/testimonials/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(updated)
-    });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        await this.supabase.from('testimonials').update({
+          name: updated.name,
+          role: updated.role,
+          quote: updated.quote,
+          full_quote: updated.fullQuote,
+          rating: updated.rating
+        }).eq('id', id);
+        return { success: true };
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/testimonials/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
 
     const data = await this.getPortfolioData();
     if (data.testimonials && data.testimonials[id]) {
@@ -230,8 +503,17 @@ class PortfolioAPI {
   }
 
   async deleteTestimonial(id) {
-    const live = await this.request(`/testimonials/${id}`, { method: 'DELETE' });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        await this.supabase.from('testimonials').delete().eq('id', id);
+        return { success: true };
+      } catch (e) {}
+    }
+
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/testimonials/${id}`, { method: 'DELETE' });
+      if (res.ok) return await res.json();
+    } catch (e) {}
 
     const data = await this.getPortfolioData();
     if (data.testimonials) {
@@ -241,36 +523,103 @@ class PortfolioAPI {
     return { success: true };
   }
 
-  // --- Messages & Inquiries ---
+  // ==========================================
+  // 6. Messages & Inquiries
+  // ==========================================
   async getMessages() {
-    const live = await this.request('/messages');
-    if (live) return live;
+    // 1. Supabase Cloud
+    if (this.supabase) {
+      try {
+        const { data, error } = await this.supabase.from('messages').select('*').order('created_at', { ascending: false });
+        if (!error && data) {
+          const list = data.map(m => ({
+            id: m.id,
+            name: m.name,
+            email: m.email,
+            subject: m.subject,
+            message: m.message,
+            read: Boolean(m.read),
+            date: m.created_at
+          }));
+          localStorage.setItem(this.config.STORAGE_KEYS.MESSAGES, JSON.stringify(list));
+          return list;
+        }
+      } catch (err) {
+        console.warn('Supabase get messages error:', err);
+      }
+    }
+
+    // 2. Local REST API
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/messages`);
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || [];
+      }
+    } catch (e) {}
+
+    // 3. LocalStorage
     const raw = localStorage.getItem(this.config.STORAGE_KEYS.MESSAGES);
     return raw ? JSON.parse(raw) : [];
   }
 
   async sendMessage(messageData) {
-    const live = await this.request('/messages', {
-      method: 'POST',
-      body: JSON.stringify(messageData)
-    });
-    if (live) return live;
-
-    const messages = await this.getMessages();
+    const id = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
     const newMsg = {
-      id: 'msg_' + Date.now(),
-      date: new Date().toISOString(),
+      id,
+      name: messageData.name,
+      email: messageData.email,
+      subject: messageData.subject || 'Portfolio Inquiry',
+      message: messageData.message,
       read: false,
-      ...messageData
+      date: new Date().toISOString()
     };
+
+    // 1. Supabase Cloud
+    if (this.supabase) {
+      try {
+        const { error } = await this.supabase.from('messages').insert([{
+          id,
+          name: newMsg.name,
+          email: newMsg.email,
+          subject: newMsg.subject,
+          message: newMsg.message,
+          read: false
+        }]);
+        if (!error) return newMsg;
+      } catch (err) {
+        console.warn('Supabase send message error:', err);
+      }
+    }
+
+    // 2. Local REST API
+    try {
+      const res = await fetch(`${this.config.BASE_URL}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
+      });
+      if (res.ok) return (await res.json()).data || newMsg;
+    } catch (e) {}
+
+    // 3. LocalStorage
+    const messages = await this.getMessages();
     messages.unshift(newMsg);
     localStorage.setItem(this.config.STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
     return newMsg;
   }
 
   async markMessageRead(id) {
-    const live = await this.request(`/messages/${id}/read`, { method: 'PUT' });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        await this.supabase.from('messages').update({ read: true }).eq('id', id);
+        return { success: true };
+      } catch (e) {}
+    }
+
+    try {
+      await fetch(`${this.config.BASE_URL}/messages/${id}/read`, { method: 'PUT' });
+    } catch (e) {}
 
     const messages = await this.getMessages();
     const target = messages.find(m => m.id === id);
@@ -280,8 +629,16 @@ class PortfolioAPI {
   }
 
   async deleteMessage(id) {
-    const live = await this.request(`/messages/${id}`, { method: 'DELETE' });
-    if (live) return live;
+    if (this.supabase) {
+      try {
+        await this.supabase.from('messages').delete().eq('id', id);
+        return { success: true };
+      } catch (e) {}
+    }
+
+    try {
+      await fetch(`${this.config.BASE_URL}/messages/${id}`, { method: 'DELETE' });
+    } catch (e) {}
 
     let messages = await this.getMessages();
     messages = messages.filter(m => m.id !== id);

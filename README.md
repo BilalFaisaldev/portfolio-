@@ -123,6 +123,21 @@ npm start
 
 ---
 
+## ☁️ Free Cloud Database Setup (Supabase PostgreSQL)
+
+Connect a permanent free cloud database so changes in your Admin Panel are saved in the cloud and instantly visible to everyone globally on GitHub Pages (`https://bilalfaisaldev.github.io/portfolio-/`):
+
+1. **Create Free Project**: Go to **[supabase.com](https://supabase.com/)** and create a free account & project (takes 30 seconds).
+2. **Run Database Schema**:
+   - In your Supabase Dashboard, click on **SQL Editor** on the left menu.
+   - Open the file [`supabase-schema.sql`](supabase-schema.sql) in this repo, copy all its contents, paste into the SQL Editor, and click **"Run"**.
+3. **Connect to Your Portfolio**:
+   - Go to Supabase **Project Settings** ➡️ **API**.
+   - Copy your **Project URL** and **`anon` `public` API Key**.
+   - Either paste them into `js/config.js` or open your live Admin Panel (`https://bilalfaisaldev.github.io/portfolio-/admin/`), go to **API & Backend Integration**, paste the keys, and click **Save & Connect Cloud Database**!
+
+---
+
 ## 🌐 1-Click Free Deployment on Render.com
 
 1. Sign in to **[Render.com](https://render.com/)** with your GitHub account.

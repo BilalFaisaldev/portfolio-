@@ -371,13 +371,43 @@
         </div>
       </section>
 
-      <!-- 7. API INTEGRATION SETTINGS -->
+      <!-- 7. API & CLOUD DATABASE SETTINGS -->
       <section class="admin-view" id="view-api-settings">
+        <div class="panel" style="border-color: var(--border-glow); box-shadow: var(--shadow-aurora);">
+          <div class="panel-header">
+            <div>
+              <div class="badge" style="margin-bottom: 0.5rem;">RECOMMENDED FOR PRODUCTION</div>
+              <h2 class="panel-title">☁️ Supabase Cloud Database (PostgreSQL)</h2>
+              <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">Connect to your free Supabase cloud database so your changes are saved permanently and visible to visitors globally.</p>
+            </div>
+            <div id="supabase-status-badge" class="badge badge-client">Checking Status...</div>
+          </div>
+
+          <form id="supabase-config-form" class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="supabase-project-url">Supabase Project URL</label>
+              <input type="url" id="supabase-project-url" class="form-input" placeholder="https://xyzcompany.supabase.co" />
+              <span class="form-help">Found in Supabase Dashboard > Settings > API > Project URL</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="supabase-anon-key">Supabase Anon Public API Key</label>
+              <input type="password" id="supabase-anon-key" class="form-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+              <span class="form-help">Found in Supabase Dashboard > Settings > API > Project API Keys > <code>anon / public</code></span>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+              <button type="submit" class="btn btn-primary">Save & Connect Cloud Database</button>
+              <button type="button" class="btn btn-outline" id="btn-test-supabase">Test Cloud Connection</button>
+            </div>
+          </form>
+        </div>
+
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h2 class="panel-title">REST API & Backend Integration</h2>
-              <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">Configure connection to your custom backend server (Node/Express, Firebase, Supabase, FastAPI).</p>
+              <h2 class="panel-title">Custom REST API Server (Optional)</h2>
+              <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">Configure connection if running the custom Node.js Express backend server on Render, Railway or localhost.</p>
             </div>
           </div>
 
@@ -385,37 +415,21 @@
             <div class="form-group">
               <label class="form-label">Data Source Mode</label>
               <select id="api-mode-select" class="form-select">
-                <option value="false">LocalStorage / Offline Mock (Default - works instantly)</option>
+                <option value="false">LocalStorage / Offline Mock (Default)</option>
                 <option value="true">Live REST API Backend</option>
               </select>
-              <span class="form-help">When LocalStorage mode is active, all changes persist directly in your browser.</span>
             </div>
 
             <div class="form-group">
               <label class="form-label" for="api-base-url">API Base URL</label>
               <input type="url" id="api-base-url" class="form-input" placeholder="http://localhost:5000/api" />
-              <span class="form-help">Expected REST endpoints: <code>/portfolio</code>, <code>/projects</code>, <code>/services</code>, <code>/testimonials</code>, <code>/messages</code></span>
             </div>
 
             <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
               <button type="submit" class="btn btn-primary">Save API Configuration</button>
-              <button type="button" class="btn btn-outline" id="btn-test-api">Test Connection</button>
+              <button type="button" class="btn btn-outline" id="btn-test-api">Test REST Connection</button>
             </div>
           </form>
-        </div>
-
-        <div class="panel">
-          <h3 class="panel-title" style="margin-bottom: 0.75rem;">Backend Endpoint Specification</h3>
-          <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1rem;">Use the specification below to build or connect your server in any language:</p>
-          <pre style="background: var(--bg-input); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-family: var(--font-mono); font-size: 0.8125rem; overflow-x: auto; color: var(--primary);">
-GET    /api/portfolio       -> Returns full portfolio data JSON
-PUT    /api/personal        -> Updates personal profile info
-GET    /api/projects        -> Returns projects list
-POST   /api/projects        -> Creates new project
-PUT    /api/projects/:id    -> Updates project by ID
-DELETE /api/projects/:id    -> Deletes project
-GET    /api/messages        -> Returns received inquiries
-POST   /api/messages        -> Submits public contact inquiry</pre>
         </div>
       </section>
 
@@ -578,7 +592,8 @@ POST   /api/messages        -> Submits public contact inquiry</pre>
   <!-- Toast Container -->
   <div class="toast-container" id="admin-toast-container"></div>
 
-  <!-- Scripts -->
+  <!-- Supabase Cloud SDK & App Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../js/config.js"></script>
   <script src="../js/api.js"></script>
   <script src="js/admin.js"></script>

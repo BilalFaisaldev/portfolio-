@@ -550,14 +550,34 @@ function setupMobileMenu() {
 }
 
 /**
- * 13. Contact Form Handling
+ * 13. Contact Form Handling with Anti-Bot Honeypot & Rate Limiting
  */
+let lastContactSubmissionTime = 0;
+
 function setupContactForm() {
   const form = document.getElementById('contact-form');
   if (!form) return;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    // 1. Anti-Bot Honeypot Check
+    const botTrap = document.getElementById('form-bot-trap');
+    if (botTrap && botTrap.value) {
+      console.warn('Spam bot trap triggered.');
+      form.reset();
+      showToast('Thank you! Your message has been sent successfully.', 'success');
+      return;
+    }
+
+    // 2. Client-side Rate Limiting (30-second cooldown)
+    const now = Date.now();
+    if (now - lastContactSubmissionTime < 30000) {
+      const waitSec = Math.ceil((30000 - (now - lastContactSubmissionTime)) / 1000);
+      showToast(`Please wait ${waitSec}s before sending another message.`, 'error');
+      return;
+    }
+
     const name = document.getElementById('form-name').value.trim();
     const email = document.getElementById('form-email').value.trim();
     const subject = document.getElementById('form-subject').value.trim();
@@ -577,6 +597,7 @@ function setupContactForm() {
       if (typeof portfolioAPI !== 'undefined') {
         await portfolioAPI.sendMessage({ name, email, subject, message });
       }
+      lastContactSubmissionTime = Date.now();
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
       form.reset();

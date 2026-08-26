@@ -117,13 +117,25 @@ npm start
 Connect a permanent free cloud database so changes in your Admin Panel are saved in the cloud and instantly visible to everyone globally on GitHub Pages (`https://bilalfaisaldev.github.io/portfolio-/`):
 
 1. **Create Free Project**: Go to **[supabase.com](https://supabase.com/)** and create a free account & project (takes 30 seconds).
-2. **Run Database Schema**:
+2. **Run Database Schema & Security Patch**:
    - In your Supabase Dashboard, click on **SQL Editor** on the left menu.
-   - Open the file [`supabase-schema.sql`](supabase-schema.sql) in this repo, copy all its contents, paste into the SQL Editor, and click **"Run"**.
-3. **Connect to Your Portfolio**:
-   - Go to Supabase **Project Settings** ➡️ **API**.
-   - Copy your **Project URL** and **`anon` `public` API Key**.
-   - Either paste them into `js/config.js` or open your live Admin Panel (`https://bilalfaisaldev.github.io/portfolio-/admin/`), go to **API & Backend Integration**, paste the keys, and click **Save & Connect Cloud Database**!
+   - Open [`supabase-schema.sql`](supabase-schema.sql), copy all its contents, paste into the SQL Editor, and click **"Run"**.
+   - Open [`supabase-security-patch.sql`](supabase-security-patch.sql), copy and run it in the SQL Editor to lock down Row Level Security (RLS) so only authenticated admins can write/delete.
+
+3. **Create Your Admin User**:
+   - In your Supabase Dashboard, navigate to **Authentication** ➡️ **Users**.
+   - Click **"Add User"** ➡️ **"Create user"**.
+   - Enter your Admin Email (e.g., `admin@bilalfaisal.dev`) and a secure password.
+   - You can now use these credentials to log in at `https://bilalfaisaldev.github.io/portfolio-/admin/`!
+
+---
+
+## 🔒 Enterprise Security & Access Control
+
+- **Supabase JWT Authentication**: Admin Studio is locked behind Supabase Email & Password authentication.
+- **PostgreSQL Row Level Security (RLS)**: Public visitors have Read-Only access to portfolio items and Insert-Only access to the contact form. All Create/Update/Delete operations require valid admin JWT authentication.
+- **Private Inquiries Isolation**: Contact messages are isolated so only logged-in admins can view or manage them.
+- **Spam & Anti-Bot Protection**: The contact form features a bot honeypot trap and client-side 30-second rate limiting cooldown.
 
 ---
 

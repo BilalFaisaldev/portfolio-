@@ -1,15 +1,15 @@
 /**
- * Portfolio Admin Panel - Application & CRUD Controller
+ * Portfolio Admin Panel - Application & CRUD Controller with Supabase Auth
  */
 
 let currentView = 'dashboard';
 let cachedPortfolioData = {};
 let cachedMessages = [];
+let currentAdminUser = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadAdminData();
-  setupNavigation();
   setupTheme();
+  setupNavigation();
   setupProjectsController();
   setupServicesController();
   setupTestimonialsController();
@@ -17,7 +17,139 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupProfileController();
   setupApiController();
   setupModalDismissers();
+  setupAuthHandlers();
+  
+  await checkAuthSession();
 });
+
+/**
+ * 0. Supabase Authentication Handlers
+ */
+async function checkAuthSession() {
+  const loginOverlay = document.getElementById('admin-login-screen');
+  const userEmailElem = document.getElementById('admin-user-email');
+  const logoutBtn = document.getElementById('btn-admin-logout');
+
+  // Check if Supabase is initialized
+  if (typeof portfolioAPI !== 'undefined' && portfolioAPI.initSupabase) {
+    const supabase = portfolioAPI.initSupabase();
+    if (supabase && supabase.auth) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          currentAdminUser = session.user;
+          if (loginOverlay) loginOverlay.classList.remove('active');
+          if (userEmailElem) {
+            userEmailElem.textContent = session.user.email;
+            userEmailElem.style.display = 'inline-block';
+          }
+          if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+
+          await loadAdminData();
+          return;
+        }
+      } catch (err) {
+        console.warn('Session check warning:', err);
+      }
+    }
+  }
+
+  // If no active Supabase session, show login screen
+  if (loginOverlay) loginOverlay.classList.add('active');
+  if (userEmailElem) userEmailElem.style.display = 'none';
+  if (logoutBtn) logoutBtn.style.display = 'none';
+}
+
+function setupAuthHandlers() {
+  const loginForm = document.getElementById('admin-login-form');
+  const loginError = document.getElementById('login-error-alert');
+  const loginBtn = document.getElementById('btn-login-submit');
+  const loginBtnText = document.getElementById('login-btn-text');
+  const logoutBtn = document.getElementById('btn-admin-logout');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!email || !password) {
+        if (loginError) {
+          loginError.textContent = 'Please enter both email and password.';
+          loginError.style.display = 'block';
+        }
+        return;
+      }
+
+      if (loginBtn) loginBtn.disabled = true;
+      if (loginBtnText) loginBtnText.textContent = 'Authenticating...';
+      if (loginError) loginError.style.display = 'none';
+
+      try {
+        const supabase = portfolioAPI.initSupabase();
+        if (!supabase || !supabase.auth) {
+          throw new Error('Supabase client is not available. Please verify your Supabase configuration.');
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (data && data.user) {
+          currentAdminUser = data.user;
+          const loginOverlay = document.getElementById('admin-login-screen');
+          if (loginOverlay) loginOverlay.classList.remove('active');
+
+          const userEmailElem = document.getElementById('admin-user-email');
+          if (userEmailElem) {
+            userEmailElem.textContent = data.user.email;
+            userEmailElem.style.display = 'inline-block';
+          }
+          if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+
+          showAdminToast(`Authenticated as ${data.user.email}`);
+          await loadAdminData();
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        if (loginError) {
+          loginError.textContent = err.message || 'Invalid login credentials. Please try again.';
+          loginError.style.display = 'block';
+        }
+      } finally {
+        if (loginBtn) loginBtn.disabled = false;
+        if (loginBtnText) loginBtnText.textContent = 'Authenticate & Sign In';
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      if (confirm('Are you sure you want to sign out from Admin Studio?')) {
+        try {
+          const supabase = portfolioAPI.initSupabase();
+          if (supabase && supabase.auth) {
+            await supabase.auth.signOut();
+          }
+        } catch (e) {
+          console.warn('Sign out error:', e);
+        }
+        currentAdminUser = null;
+        const loginOverlay = document.getElementById('admin-login-screen');
+        const userEmailElem = document.getElementById('admin-user-email');
+        if (loginOverlay) loginOverlay.classList.add('active');
+        if (userEmailElem) userEmailElem.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        showAdminToast('Signed out successfully');
+      }
+    });
+  }
+}
 
 /**
  * 1. Data Loader & Dashboard Stats

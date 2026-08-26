@@ -12,41 +12,41 @@ const portfolioConfig = {
 
   personal: {
     name: "Bilal Faisal",
-    roleBadge: "Senior Full Stack & Cloud Engineer",
+    roleBadge: "Full Stack Developer",
     headlineStart: "Engineering",
     headlineGradient: "Scalable Web Platforms",
-    headlineEnd: "& High-Performance Cloud Architectures.",
-    subheadline: "I bridge complex business logic with clean, scalable code. Specializing in high-concurrency Node.js/TypeScript backends, modern Next.js frontends, and cloud-native systems.",
+    headlineEnd: "& Modern Cloud Applications.",
+    subheadline: "Full Stack Developer with professional experience at Code Creatives (8 months) alongside 1+ year of intensive personal & independent project development. Specializing in high-performance Next.js frontends, scalable Node.js/TypeScript backends, and cloud databases.",
     avatarText: "BF",
-    statusBadge: "Available for Q2/Q3 Projects & Contracts",
+    statusBadge: "Available for Full-Time & Contract Projects",
     githubUrl: "https://github.com/BilalFaisaldev",
     linkedinUrl: "https://linkedin.com/",
     email: "contact@bilalfaisal.dev",
     phone: "+92 300 1234567",
-    calendlyUrl: "https://calendly.com/",
-    location: "Islamabad, PK (Remote Worldwide)",
+    calendlyUrl: "https://calendly.com/bilalfaisalarain/30min",
+    location: "Pakistan (Remote Worldwide)",
     
     // Hero Stats
     heroStats: [
-      { label: "Shipped Apps", value: "20+" },
-      { label: "Uptime Reliability", value: "99.9%" },
+      { label: "Total Experience", value: "1.8+ Yrs" },
+      { label: "Shipped Projects", value: "20+" },
       { label: "Client Satisfaction", value: "100%" }
     ],
 
     // About Section Bento Details
     about: {
-      tag: "ENGINEERING PHILOSOPHY",
-      title: "Building Resilient Systems That Scale Under Pressure",
-      bioText: "With over 5 years of engineering experience across the entire development lifecycle, I specialize in crafting full-stack web applications that combine snappy user interfaces with ultra-reliable, high-throughput backends. I prioritize clean domain-driven architecture, robust type safety, automated end-to-end testing, and automated CI/CD pipelines.",
-      experienceYears: "5+",
-      endpointsDeployed: "150+",
-      happyClients: "18+",
+      tag: "ENGINEERING JOURNEY",
+      title: "Full Stack Developer with Real-World Industry & Project Experience",
+      bioText: "I am a dedicated Full Stack Developer with 8 months of professional development experience at Code Creatives combined with 1+ year of hands-on personal project engineering. My focus is on building robust, scalable web platforms that unite clean domain-driven backend architecture with pixel-perfect, responsive user interfaces. From architecting relational PostgreSQL/Supabase schemas to shipping full-stack Next.js and Node.js solutions, I deliver fast, maintainable, and production-ready software.",
+      experienceYears: "1.8+",
+      endpointsDeployed: "20+",
+      happyClients: "12+",
       corePillars: [
-        { title: "Type-Safe & Clean Code", desc: "Strict TypeScript, functional patterns, and modular domain architecture." },
-        { title: "Resilient Cloud Backends", desc: "Microservices, distributed caching with Redis, and optimized database indexing." },
-        { title: "Automated QA & CI/CD", desc: "Comprehensive unit and E2E testing using Jest, Vitest, and Playwright." }
+        { title: "Industry Experience @ Code Creatives", desc: "8 months of collaborative development delivering production-grade web features and API integrations." },
+        { title: "Full Stack Architecture", desc: "Building scalable Node.js/Express backends, TypeScript systems, and relational PostgreSQL databases." },
+        { title: "Modern Next.js & UI Engineering", desc: "Crafting fluid, high-performance web applications with responsive design systems." }
       ],
-      techRadarNow: ["Next.js 15 App Router", "AI Agents & LLM Tooling", "Serverless PostgreSQL", "Distributed WebSockets"]
+      techRadarNow: ["Next.js 15 App Router", "TypeScript & Node.js", "Supabase & PostgreSQL", "REST APIs & WebSockets"]
     }
   },
 

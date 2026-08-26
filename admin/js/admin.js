@@ -25,32 +25,59 @@ document.addEventListener('DOMContentLoaded', async () => {
 /**
  * 0. Supabase Authentication Handlers
  */
+function getSupabaseAuthClient() {
+  if (typeof portfolioAPI !== 'undefined') {
+    if (portfolioAPI.supabase && portfolioAPI.supabase.auth) {
+      return portfolioAPI.supabase;
+    }
+    if (typeof portfolioAPI.initSupabase === 'function') {
+      const client = portfolioAPI.initSupabase();
+      if (client && client.auth) return client;
+    }
+    if (typeof portfolioAPI.getSupabase === 'function') {
+      const client = portfolioAPI.getSupabase();
+      if (client && client.auth) return client;
+    }
+  }
+
+  // Direct CDN fallback
+  const url = (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.url : '') || localStorage.getItem('portfolio_supabase_url');
+  const key = (typeof portfolioConfig !== 'undefined' && portfolioConfig.supabase ? portfolioConfig.supabase.anonKey : '') || localStorage.getItem('portfolio_supabase_key');
+
+  if (url && key) {
+    if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+      return window.supabase.createClient(url, key);
+    }
+    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+      return supabase.createClient(url, key);
+    }
+  }
+  return null;
+}
+
 async function checkAuthSession() {
   const loginOverlay = document.getElementById('admin-login-screen');
   const userEmailElem = document.getElementById('admin-user-email');
   const logoutBtn = document.getElementById('btn-admin-logout');
 
-  // Check if Supabase is initialized
-  if (typeof portfolioAPI !== 'undefined' && portfolioAPI.initSupabase) {
-    const supabase = portfolioAPI.initSupabase();
-    if (supabase && supabase.auth) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-          currentAdminUser = session.user;
-          if (loginOverlay) loginOverlay.classList.remove('active');
-          if (userEmailElem) {
-            userEmailElem.textContent = session.user.email;
-            userEmailElem.style.display = 'inline-block';
-          }
-          if (logoutBtn) logoutBtn.style.display = 'inline-flex';
-
-          await loadAdminData();
-          return;
+  const supabase = getSupabaseAuthClient();
+  if (supabase && supabase.auth) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        currentAdminUser = session.user;
+        if (loginOverlay) loginOverlay.classList.remove('active');
+        if (userEmailElem) {
+          userEmailElem.textContent = session.user.email;
+          userEmailElem.style.display = 'inline-block';
         }
-      } catch (err) {
-        console.warn('Session check warning:', err);
+        if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+
+        await loadAdminData();
+        return;
       }
+    } catch (err) {
+      console.warn('Session check warning:', err);
     }
   }
 
@@ -86,9 +113,9 @@ function setupAuthHandlers() {
       if (loginError) loginError.style.display = 'none';
 
       try {
-        const supabase = portfolioAPI.initSupabase();
+        const supabase = getSupabaseAuthClient();
         if (!supabase || !supabase.auth) {
-          throw new Error('Supabase client is not available. Please verify your Supabase configuration.');
+          throw new Error('Supabase client is not available. Please verify your Supabase configuration in js/config.js.');
         }
 
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -132,7 +159,7 @@ function setupAuthHandlers() {
     logoutBtn.addEventListener('click', async () => {
       if (confirm('Are you sure you want to sign out from Admin Studio?')) {
         try {
-          const supabase = portfolioAPI.initSupabase();
+          const supabase = getSupabaseAuthClient();
           if (supabase && supabase.auth) {
             await supabase.auth.signOut();
           }

@@ -57,13 +57,26 @@ class PortfolioAPI {
       const url = configUrl || savedUrl || '';
       const key = configKey || savedKey || '';
 
-      if (url && key && typeof window.supabase !== 'undefined') {
-        this.supabase = window.supabase.createClient(url, key);
-        console.log('✔ Connected to Supabase Cloud Database:', url);
+      if (url && key) {
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+          this.supabase = window.supabase.createClient(url, key);
+          console.log('✔ Connected to Supabase Cloud Database:', url);
+        } else if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+          this.supabase = supabase.createClient(url, key);
+          console.log('✔ Connected to Supabase Cloud Database:', url);
+        }
       }
     } catch (e) {
       console.warn('Supabase initialization failed:', e);
     }
+    return this.supabase;
+  }
+
+  getSupabase() {
+    if (!this.supabase) {
+      this.initSupabase();
+    }
+    return this.supabase;
   }
 
   setSupabaseCredentials(url, key) {
